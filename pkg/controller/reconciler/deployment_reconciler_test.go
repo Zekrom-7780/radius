@@ -603,3 +603,25 @@ func waitForDeploymentDeleted(t *testing.T, client client.Client, name types.Nam
 		return apierrors.IsNotFound(err)
 	}, deploymentTestWaitDuration, deploymentTestWaitInterval, "waiting for deployment to be deleted")
 }
+
+func Test_DeploymentReconciler_BicepDeployment(t *testing.T) {
+    ctx := testcontext.New(t)
+    radius, client := SetupDeploymentTest(t)
+
+    name := types.NamespacedName{Namespace: "radius-system", Name: "bicep-de"}
+
+    deployment := makeDeployment(name)
+    deployment.Annotations[AnnotationRadiusEnabled] = "false" 
+
+    err := client.Create(ctx, deployment)
+    require.NoError(t, err)
+
+    fetchedDeployment := &appsv1.Deployment{}
+    err = client.Get(ctx, name, fetchedDeployment)
+    require.NoError(t, err)
+
+    assert.Equal(t, "false", fetchedDeployment.Annotations[AnnotationRadiusEnabled])
+
+    err = client.Delete(ctx, deployment)
+    require.NoError(t, err)
+}
